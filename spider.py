@@ -35,11 +35,11 @@ from time import sleep
 from urlparse import urlparse
 from lxml import etree
 from optparse import OptionParser
-
-try:
-    from sqlite3 import dbapi2 as sqlite
-except:
-    from pysqlite2 import dbapi2 as sqlite
+import sqlite3
+# try:
+    # from sqlite3 import dbapi2 as sqlite
+# except:
+    # from pysqlite2 import dbapi2 as sqlite
 
 
 
@@ -56,28 +56,29 @@ formatter = logging.Formatter('%(name)s %(asctime)s %(levelname)s %(message)s') 
 
 class mySqlite(object):
 
-    def init(self, path, logger, level):
+    def __init__(self, dbpth, logger, level):
         '''初始化数据库连接.
 
-           >>> from sqlite3 import dbapi2 as sqlite
-           >>> conn = sqlite.connect('testdb')
+           >>> import sqlite3
+           >>> conn = sqlite3.connect('testdb.db')
         '''
+
+        self.logger = logger
+        self.loglevel = level
         try:
-            self.conn = sqlite.connect(path) #连接sqlite
+            self.conn = sqlite3.connect(dbpth) #连接sqlite
             self.cur = self.conn.cursor()  #cursor是一个记录游标，用于一行一行迭代的访问查询返回的结果
         except Exception, e:
             myLogger(logger, self.loglevel, e, True)
             return -1
 
-        self.logger = logger
-        self.loglevel = level
 
     def create(self, table):
         '''创建table，我这里创建包含2个段 ID（数字型，自增长），Data（char 128字符）'''
         try:
             self.cur.execute("CREATE TABLE IF NOT EXISTS %s(Id INTEGER PRIMARY KEY AUTOINCREMENT, Data VARCHAR(40))"% table)
             self.done()
-        except sqlite.Error ,e: #异常记录日志并且做事务回滚,以下相同
+        except sqlite3.Error ,e: #异常记录日志并且做事务回滚,以下相同
             myLogger(self.logger, self.loglevel, e, True)
             self.conn.rollback()
         if self.loglevel >3: #设置在日志级别较高才记录,这样级别高的详细
@@ -88,7 +89,7 @@ class mySqlite(object):
         try:
             self.cur.execute("INSERT INTO %s(Data) VALUES('%s')" % (table,data))
             self.done()
-        except sqlite.Error ,e:
+        except sqlite3.Error ,e:
             myLogger(self.logger, self.loglevel, e, True)
             self.conn.rollback()
         else:
@@ -109,7 +110,7 @@ class mySqlite(object):
 
 class Crawler(object):
 
-    def init(self, args, app, table, logger):
+    def __init__(self, args, app, table, logger):
         self.deep = args.depth  #指定网页的抓取深度
         self.url = args.urlpth #指定网站地址
         self.key = args.key #要搜索的关键字
@@ -195,7 +196,7 @@ class Crawler(object):
         >>> import datetime
         >>> logger = configLogger('test.log')
         >>> time = datetime.datetime.now().strftime("%m%d%H%M%S")
-        >>> sq = mySqlite('test.db', logger, 1)
+        >>> sq = mySqlite('testdb.db', logger, 1)
         >>> table = 'd' + str(time)
         >>> sq.create(table)
         >>> tp = ThreadPool(5)
@@ -204,7 +205,7 @@ class Crawler(object):
         >>> t.urlpth='http://www.baidu.com'
         >>> t.logfile = 'test.log'
         >>> t.loglevel = 1
-        >>> t.dbpth = 'test.db'
+        >>> t.dbpth = 'testdb.db'
         >>> t.key = 'test'
         >>> d = Crawler(t, tp, table, logger)
         >>> d.getPageSource(t.urlpth, t.key, t.depth)
@@ -218,8 +219,8 @@ class Crawler(object):
 
 class MyThread(threading.Thread):
 
-    def init(self, workQueue, timeout=30, *kwargs):
-        threading.Thread.init(self, kwargs=kwargs)
+    def __init__(self, workQueue,timeout=30, *kwargs):
+        threading.Thread.__init__(self, kwargs=kwargs)
         self.timeout = timeout #线程在结束前等待任务队列多长时间
         self.setDaemon(True)  #设置deamon,表示主线程死掉,子线程不跟随死掉
         self.workQueue = workQueue
@@ -236,13 +237,13 @@ class MyThread(threading.Thread):
             except Queue.Empty: #任务队列空的时候结束此线程
                 break
             except Exception, e:
-                myLogger(self.logger, self.loglevel, e, True)
+                # myLogger(self.logger, self.loglevel, e, True)
                 return -1
 
 
 class ThreadPool(object):
 
-    def init(self, num_of_threads):
+    def __init__(self, num_of_threads):
          self.workQueue = Queue.Queue()
          self.threads = []
          self.createThreadPool(num_of_threads)
@@ -320,8 +321,8 @@ def main():
         import doctest
         print doctest.testmod()
         return
-    if not options.urlpth or not options.key or not options.dbpth: #判断必选项是否存在
-        print 'Need to specify the parameters option "-u " or "-k" or "-q"!'
+    if options.urlpth and options.key and options.dbpth is None: #判断必选项是否存在
+        print 'Need to specify the parameters option "-u" or "-k" or "-q"!'
         return
     if '-h' in sys.argv  or '--help' in sys.argv:  #选择帮助信息,打印doc
         print __doc__
