@@ -289,25 +289,25 @@ def myLogger(logger, lv, mes, err=False):
 def parse():
     parser = OptionParser(
                   description="This script is used to crawl analyzing web!")
-    parser.add_option("-u", "-url", dest="urlpth", action="store",
+    parser.add_option("-u", "--url", dest="urlpth", action="store",
                   help="Path you want to fetch", metavar="www.sina.com.cn")
-    parser.add_option("-d", "-deep", dest="depth", action="store",type="int",
+    parser.add_option("-d", "--deep", dest="depth", action="store",type="int",
                   help="Url path's deep, default 1", default=1)
-    parser.add_option("-k", "-key", dest="key", action="store",
+    parser.add_option("-k", "--key", dest="key", action="store",
                   help="You want to query keywords, For example 'test'")
-    parser.add_option("-f", "-file", dest="logfile", action="store",
+    parser.add_option("-f", "--file", dest="logfile", action="store",
                   help="Record log file path and name, default spider.log",
                   default='spider.log')
-    parser.add_option("-l", "-level", dest="loglevel", action = "store",
+    parser.add_option("-l", "--level", dest="loglevel", action = "store",
                   type="int",help="Log file level, default 1(CRITICAL)",
                   default=1)
-    parser.add_option("-t", "-thread", dest="thread", action="store",
+    parser.add_option("-t", "--thread", dest="thread", action="store",
                   type="int",help="Specify the thread pool, default 10",
                   default=10)
-    parser.add_option("-q", "-dbfile", dest="dbpth", action="store",
+    parser.add_option("-q", "--dbfile", dest="dbpth", action="store",
                   help="Specify the the sqlite file directory and name, \
                   default  test.db", metavar='test.db')
-    parser.add_option("-s", "-testself", dest="testself", action="store_true",
+    parser.add_option("-s", "--testself", dest="testself", action="store_true",
                   help="Test myself", default=False)
     (options, args) = parser.parse_args()
     return options
@@ -323,7 +323,7 @@ def main():
     if not options.urlpth or not options.key or not options.dbpth: #判断必选项是否存在
         print 'Need to specify the parameters option "-u " or "-k" or "-q"!'
         return
-    if '-h' in sys.argv  or '-help' in sys.argv:  #选择帮助信息,打印doc
+    if '-h' in sys.argv  or '--help' in sys.argv:  #选择帮助信息,打印doc
         print __doc__
 
     logger = configLogger(options.logfile) #实例化日志调用

@@ -22,8 +22,10 @@ class MyThread(threading.Thread):
             except Queue.Empty: #任务队列空的时候结束此线程
                 break
             except Exception, e:
-                return -1      
-        
+                myLogger(self.logger, self.loglevel, e, True)
+                return -1
+
+
 class ThreadPool(object):
 
     def init(self, num_of_threads):
