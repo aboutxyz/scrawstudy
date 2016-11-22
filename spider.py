@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 
 '''
 This script is used to crawl analyzing web!
