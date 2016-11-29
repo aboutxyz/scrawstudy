@@ -25,32 +25,32 @@ class Fetch(Thread):
         self.tasks = tasks
         self.url = None
         self.depth = None
+        self.responseurl = None
         self.daemon = True
         self.start()
 
     def run(self):
         while True:
+            lock.acquire()
             try:
                 (self.url, self.depth) = self.tasks.get()
-                print self.url
+                print self.url, self.depth
             except:
                 pass
-
             if self.depth > 0:
                 try:
                     self.depth-=1
                     s = requests.session()
-                    responseurl = s.get("http://localhost:3000/" + self.url, timeout=0.01)
-                    responseurl.encoding = "utf-8"
+                    self.responseurl = s.get("http://localhost:3000/" + self.url, timeout=0.01)
+                    self.responseurl.encoding = "utf-8"
                 except:
                     pass
-                lock.acquire()
-                links = self.parse(self, self.url, responseurl)
+                links = self.parse(self, self.url, self.responseurl)
                 for link in links.difference(seen_urls):
                     self.tasks.put((link, self.depth))
                 seen_urls.update(links)
-                lock.release()
-                self.tasks.task_done()
+            lock.release()
+            self.tasks.task_done()
 
 
 
@@ -98,7 +98,7 @@ class ThreadPool:
 def main():
     start = time.time()
     pool = ThreadPool(4)
-    pool.add_task(("/", 1))
+    pool.add_task(("/", 4))
     pool.wait_completion()
     print('{} URLs fetched in {:.1f} seconds'.format(len(seen_urls), time.time() - start))
 
