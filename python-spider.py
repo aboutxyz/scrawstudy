@@ -1,7 +1,8 @@
 # coding:utf-8
-'''
-test doc
-'''
+"""
+craw python document
+
+"""
 
 import sys
 import time
@@ -12,7 +13,9 @@ import urllib2
 import urlparse
 from threading import Thread, Lock
 from queue import Queue
+import getopt
 from bs4 import BeautifulSoup
+from optparse import OptionParser
 
 
 seen_urls = set(['/'])
@@ -39,16 +42,17 @@ class Fetch(Thread):
                 pass
             if self.depth > 0:
                 try:
-                    self.depth-=1
+                    self.depth -= 1
                     s = requests.session()
-                    self.responseurl = s.get("http://localhost:3000/" + self.url, timeout=0.01)
+                    self.responseurl = s.get("http://localhost:3000/" + self.url, timeout=0.1)
                     self.responseurl.encoding = "utf-8"
-                except:
-                    pass
-                links = self.parse(self, self.url, self.responseurl)
-                for link in links.difference(seen_urls):
-                    self.tasks.put((link, self.depth))
-                seen_urls.update(links)
+                except requests.RequestException as e:
+                    print "error of "+self.url, self.depth
+                if self.responseurl is not None:
+                    links = self.parse(self, self.url, self.responseurl)
+                    for link in links.difference(seen_urls):
+                        self.tasks.put((link, self.depth))
+                    seen_urls.update(links)
             lock.release()
             self.tasks.task_done()
 
@@ -56,7 +60,6 @@ class Fetch(Thread):
 
     @staticmethod
     def parse(self, fetched_url, responseurl):
-        #urls = set()
         seturl = set()
         try:
             selector = etree.HTML(responseurl.content)
@@ -81,7 +84,6 @@ class Fetch(Thread):
         return seturl
 
 
-
 class ThreadPool:
     def __init__(self, num_threads):
         self.tasks = Queue()
@@ -95,13 +97,32 @@ class ThreadPool:
         self.tasks.join()
 
 
+def parse():
+    parser = OptionParser(description=__doc__)
+    parser.add_option("-d", "--depth",
+                      action="store", type="int", dest="depth", default=1,
+                      help="Url path's deep, default 1")
+    (options, args) = parser.parse_args()
+    return options
+
+
 def main():
+    options = parse()
+    if options.depth is None:
+        print 'Need to specify the parameters option "-d"!'
     start = time.time()
     pool = ThreadPool(4)
-    pool.add_task(("/", 4))
+    pool.add_task(("/", int(options.depth)))
     pool.wait_completion()
     print('{} URLs fetched in {:.1f} seconds'.format(len(seen_urls), time.time() - start))
 
-
 if __name__ == '__main__':
+    # opts, args = getopt.getopt(sys.argv[1:], "d:h", ["depth=", "help"])
+    # for k,v in opts:
+    #     if k in ('-d', '-depth'):
+    #         run(v)
+    #     if k in ('-h', '-help'):
+    #         print __doc__
+
     main()
+
