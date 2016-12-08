@@ -19,7 +19,7 @@ seturl = set()
 def parse(fetched_url):
     try:
         s = requests.session()
-        responseurl = s.get("http://localhost:3000/" + fetched_url, timeout=0.1)
+        responseurl = s.get("http://localhost:3000/" + fetched_url, timeout=0.5)
         responseurl.encoding = "utf-8"
     except requests.RequestException as e:
         pass
@@ -44,7 +44,7 @@ def parse(fetched_url):
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     future_to_url = executor.submit(parse, '/')
-    for i in range(3):
+    for i in range(0):
         for url in list(future_to_url.result()):
             future_to_url = executor.submit(parse, url)
     print len(future_to_url.result())
