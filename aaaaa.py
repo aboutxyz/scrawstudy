@@ -57,8 +57,9 @@ def parse_url(fetched_url):
             continue
         defragmented, frag = urlparse.urldefrag(parts.path)
         seturl.add(defragmented)
-    seen_urls.update(seturl)
-    return seen_urls
+    diff = seturl-seen_urls
+    seen_urls.update(diff)
+    return (seen_urls, diff)
 
 
 def parse():
@@ -72,16 +73,19 @@ def parse():
 
 def run(depth):
     if depth == 0:
-        return 1
+        return -1
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             future_to_url = executor.submit(parse_url, '/')
-            for i in range(int(depth)):
-                for url in list(future_to_url.result()):
+            for i in range(depth-1):
+                for url in list(future_to_url.result()[1]):
                     future_to_url = executor.submit(parse_url, url)
                     print str(i+1) + url
-            print len(seen_urls)
-
+            for url in list(future_to_url.result()[1]):
+                print str(depth) + url
+        print len(seen_urls)
+          
+            
 
 def main():
     options = parse()
