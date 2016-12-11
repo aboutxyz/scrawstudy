@@ -13,7 +13,7 @@ from optparse import OptionParser
 import concurrent.futures
 
 seen_urls = set(['/'])
-seturl = set()
+unprocess = set(['/'])
 
 logger = logging.getLogger('parse_url')
 LEVELS={
@@ -35,6 +35,11 @@ logger.addHandler(handler2)
 
 
 def parse_url(fetched_url):
+    seturl = set()
+    try:
+        unprocess.remove(fetched_url)
+    except:
+        pass
     try:
         s = requests.session()
         responseurl = s.get("http://localhost:3000/" + fetched_url, timeout=0.5)
@@ -59,7 +64,8 @@ def parse_url(fetched_url):
         seturl.add(defragmented)
     diff = seturl-seen_urls
     seen_urls.update(diff)
-    return (seen_urls, diff)
+    unprocess.update(diff)
+    return unprocess
 
 
 def parse():
@@ -76,13 +82,13 @@ def run(depth):
         return -1
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            future_to_url = executor.submit(parse_url, '/')
-            for i in range(depth-1):
-                for url in list(future_to_url.result()[1]):
-                    future_to_url = executor.submit(parse_url, url)
-                    print str(i+1) + url
-            for url in list(future_to_url.result()[1]):
-                print str(depth) + url
+            for i in range(depth):
+                for url in list(unprocess):
+                    print url
+                    aa=executor.submit(parse_url, url)
+                    aa.result()
+            for j in list(unprocess):
+                print j
         print len(seen_urls)
           
             
