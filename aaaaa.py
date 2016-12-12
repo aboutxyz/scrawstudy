@@ -83,7 +83,7 @@ def run(depth):
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             for i in range(depth):
-                for url in list(unprocess):
+                for url in list(unprocess)[:]:
                     print url
                     aa=executor.submit(parse_url, url)
                     aa.result()
